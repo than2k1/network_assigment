@@ -66,11 +66,7 @@ class Client:
 		self.teardown.grid(row=1, column=3, padx=2, pady=2)
 
 		# Create Description button
-		self.des = Button(self.master, width=20, padx=3, pady=3)
-		self.des["text"] = "Description"
-		self.des["command"] =  self.getDescription
-		self.des.grid(row=1, column=3, padx=2, pady=2)
-
+		
 		# Create a label to display the movie
 		self.label = Label(self.master, height=19)
 		self.label.grid(row=0, column=0, columnspan=4, sticky=W+E+N+S, padx=5, pady=5)
@@ -257,19 +253,7 @@ class Client:
 			self.requestSent = self.TEARDOWN
 
 		#get Description request
-		elif requestCode == self.DESCRIPTION and self.state == self.READY:
-			# Update RTSP sequence number.
-			# ...
-			self.rtspSeq = self.rtspSeq + 1
-			# Write the RTSP request to be sent.
-			# request = ...
-			request = "PLAY " + "\n" + str(self.rtspSeq)
-
-			self.rtspSocket.send(request.encode())
-			print ('-'*60 + "\nPLAY request sent to Server...\n" + '-'*60)
-			# Keep track of the sent request.
-			# self.requestSent = ...
-			self.requestSent = self.PLAY
+		
 		else:
 			return
 

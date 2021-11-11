@@ -1,3 +1,4 @@
+__author__ = 'Tibbers'
 import sys
 from time import time
 # from VideoStream import VideoStream
