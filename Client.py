@@ -1,4 +1,4 @@
-__author__ = 'Tibbers'
+
 from tkinter import *
 import tkinter.messagebox as tkMessageBox
 from PIL import Image, ImageTk
@@ -66,6 +66,10 @@ class Client:
 		self.teardown.grid(row=1, column=3, padx=2, pady=2)
 
 		# Create Description button
+		self.description = Button(self.master, width=20, padx=3, pady=3)
+		self.description["text"] = "Description"
+		self.description["command"] =  self.getDescription
+		self.description.grid(row=1, column=4, padx=2, pady=2)
 		
 		# Create a label to display the movie
 		self.label = Label(self.master, height=19)
@@ -75,6 +79,7 @@ class Client:
 		"""Description button handler."""
 		if self.state != self.INIT:
 			self.sendRtspRequest(self.DESCRIPTION)
+		
 	def setupMovie(self):
 		"""Setup button handler."""
 		if self.state == self.INIT:
@@ -253,9 +258,20 @@ class Client:
 			self.requestSent = self.TEARDOWN
 
 		#get Description request
-		
+		elif requestCode == self.DESCRIPTION and not self.state == self.INIT:
+			# Update RTSP sequence number.
+			# ...
+			self.rtspSeq = self.rtspSeq + 1
+			# Write the RTSP request to be sent.
+			# request = ...
+			request = "DESCRIPTION " + "\n" + str(self.rtspSeq)
+			self.rtspSocket.send(request.encode())
+			print ('-'*60 + "\DESCRIPTION request sent to Server...\n" + '-'*60)
+			# Keep track of the sent request.
+			# self.requestSent = ...
+			self.requestSent = self.DESCRIPTION
 		else:
-			return
+			return 
 
 		# Send the RTSP request using rtspSocket.
 		# ...
