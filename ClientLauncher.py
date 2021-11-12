@@ -1,4 +1,4 @@
-__author__ = 'Tibbers'
+
 import sys
 from tkinter import Tk
 from Client import Client
