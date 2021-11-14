@@ -21,7 +21,7 @@ class Client:
 	TEARDOWN = 3
 	DESCRIBE = 4
 
-	counter = 0
+	
 	# Initiation..
 	def __init__(self, master, serveraddr, serverport, rtpport, filename):
 		self.master = master
@@ -38,9 +38,11 @@ class Client:
 		self.connectToServer()
 		self.frameNbr = 0
 		self.rtpSocket = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
-		self.videoLength = self.videoFrameRatemeRate = 0
+		self.videoLength = 0
+		self.videoFrameRate = 0
 		self.encode = ""
 		self.type = ""
+		self.counter = 0
 		self.start = 0
 		self.end = 0
 		self.recvdata = 0
