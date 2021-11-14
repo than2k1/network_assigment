@@ -3,7 +3,7 @@ import random, math
 import time
 from random import randint
 import sys, traceback, threading, socket
-
+import cv2
 from VideoStream import VideoStream
 from RtpPacket import RtpPacket
 
@@ -12,6 +12,7 @@ class ServerWorker:
 	PLAY = 'PLAY'
 	PAUSE = 'PAUSE'
 	TEARDOWN = 'TEARDOWN'
+	DESCRIBE = 'DESCRIBE'
 
 	INIT = 0
 	READY = 1
@@ -105,17 +106,49 @@ class ServerWorker:
 				self.clientInfo['event'].set()
 
 				self.replyRtsp(self.OK_200, seq[0])
+		
+		elif requestType == self.DESCRIBE:
+			info = self.getInfo(filename)
+			self.sendDescribeResponse(seq[0], info)
+			
 
 		# Process TEARDOWN request
 		elif requestType == self.TEARDOWN:
 			print ('-'*60 + "\nTEARDOWN Request Received\n" + '-'*60)
 
-			self.clientInfo['event'].set()
+			self.clientInfo['event'].set() 
 
 			self.replyRtsp(self.OK_200, seq[0])
 
 			# Close the RTP socket
 			self.clientInfo['rtpSocket'].close()
+
+	def getInfo(self, filename):
+		"""Get infomation of video"""
+		cap = cv2.VideoCapture(filename)
+		framerate = math.floor(cap.get(cv2.CAP_PROP_FPS))
+		length = math.floor(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+		return {
+            'length': length,  # n frames
+            'framerate': framerate
+			}
+	def sendDescribeResponse(self, seq, info):
+		"""    Generate response for DESCRIBE request   """
+		response = 'RTSP/1.0 200 OK\nCSeq: {seq}'.format(**{
+            'seq': seq
+
+        }) +'\nSession: ' + str(self.clientInfo['session'])
+		videoInfo = '\nm=video 0\na=control:streamid=0\na=length:{length}\na=framerate:{fs}\na=encode: mjpeg\na=type: video'.format(**{
+                'length': info['length'],
+                'fs': info['framerate']
+            })
+		response = response + videoInfo
+
+		print(response)
+
+		connSocket = self.clientInfo['rtspSocket'][0]
+		connSocket.send(response.encode())
+		
 
 	def sendRtp(self):
 		"""Send RTP packets over UDP."""

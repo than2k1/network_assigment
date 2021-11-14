@@ -19,7 +19,7 @@ class Client:
 	PLAY = 1
 	PAUSE = 2
 	TEARDOWN = 3
-	DESCRIPTION = 4
+	DESCRIBE = 4
 
 	counter = 0
 	# Initiation..
@@ -38,14 +38,16 @@ class Client:
 		self.connectToServer()
 		self.frameNbr = 0
 		self.rtpSocket = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
-
+		self.videoLength = self.videoFrameRatemeRate = 0
+		self.encode = ""
+		self.type =""
 	def createWidgets(self):
 		"""Build GUI."""
 		# Create Setup button
-		self.setup = Button(self.master, width=20, padx=3, pady=3)
-		self.setup["text"] = "Setup"
-		self.setup["command"] = self.setupMovie
-		self.setup.grid(row=1, column=0, padx=2, pady=2)
+		# self.setup = Button(self.master, width=20, padx=3, pady=3)
+		# self.setup["text"] = "Setup"
+		# self.setup["command"] = self.setupMovie
+		# self.setup.grid(row=1, column=0, padx=2, pady=2)
 
 		# Create Play button
 		self.start = Button(self.master, width=20, padx=3, pady=3)
@@ -74,11 +76,17 @@ class Client:
 		# Create a label to display the movie
 		self.label = Label(self.master, height=19)
 		self.label.grid(row=0, column=0, columnspan=4, sticky=W+E+N+S, padx=5, pady=5)
+		
+		#describe zone
+		self.des = Label(self.master, text = "Description:" ,height=19)
+		self.des.grid(row=0, column=4, columnspan=4)
+		# self.des.place(x=800, y=0)
+
 
 	def getDescription(self):
 		"""Description button handler."""
 		if self.state != self.INIT:
-			self.sendRtspRequest(self.DESCRIPTION)
+			self.sendRtspRequest(self.DESCRIBE)
 		
 	def setupMovie(self):
 		"""Setup button handler."""
@@ -171,7 +179,7 @@ class Client:
 	def updateMovie(self, imageFile):
 		"""Update the image file as video frame in the GUI."""
 		try:
-			photo = ImageTk.PhotoImage(Image.open(imageFile)) #stuck here !!!!!!
+			photo = ImageTk.PhotoImage(Image.open(imageFile)) 
 		except:
 			print ("photo error")
 			print ('-'*60)
@@ -180,6 +188,20 @@ class Client:
 
 		self.label.configure(image = photo, height=288)
 		self.label.image = photo
+
+	def updateDescribe(self):
+		
+		self.des.config(text = "DESCRIPTION:\nframe rate: {fr}\nencode: {encode}\ntype: {type}". format(**{
+			
+			'fr': self.videoFrameRate,
+			'encode': self.encode,
+			'type': self.type
+
+		}))
+
+
+		
+	
 
 	def connectToServer(self):
 		"""Connect to the Server. Start a new RTSP/TCP session."""
@@ -258,25 +280,26 @@ class Client:
 			self.requestSent = self.TEARDOWN
 
 		#get Description request
-		elif requestCode == self.DESCRIPTION and not self.state == self.INIT:
+		elif requestCode == self.DESCRIBE and not self.state == self.INIT:
 			# Update RTSP sequence number.
 			# ...
 			self.rtspSeq = self.rtspSeq + 1
 			# Write the RTSP request to be sent.
 			# request = ...
-			request = "DESCRIPTION " + "\n" + str(self.rtspSeq)
+			request = "DESCRIBE " + str(self.fileName) + "\n" + str(self.rtspSeq) + "\n" + " RTSP/1.0 RTP/UDP " + str(self.rtpPort)
+
 			self.rtspSocket.send(request.encode())
-			print ('-'*60 + "\DESCRIPTION request sent to Server...\n" + '-'*60)
+			print ('-'*60 + "\DESCRIBE request sent to Server...\n" + '-'*60)
 			# Keep track of the sent request.
 			# self.requestSent = ...
-			self.requestSent = self.DESCRIPTION
+			self.requestSent = self.DESCRIBE
 		else:
 			return 
 
 		# Send the RTSP request using rtspSocket.
 		# ...
 
-#		print '\nData sent:\n' + request
+		print('\nData sent:\n' + request)
 
 	def recvRtspReply(self):
 		"""Receive RTSP reply from the server."""
@@ -285,7 +308,7 @@ class Client:
 
 			if reply:
 				self.parseRtspReply(reply)
-
+ 
 			# Close the RTSP socket upon requesting Teardown
 			if self.requestSent == self.TEARDOWN:
 				self.rtspSocket.shutdown(socket.SHUT_RDWR)
@@ -333,9 +356,17 @@ class Client:
 
 					elif self.requestSent == self.TEARDOWN:
 						# self.state = ...
-
 						# Flag the teardownAcked to close the socket.
 						self.teardownAcked = 1
+ 
+					elif  self.requestSent == self.DESCRIBE:
+						infolines = lines[3:] 
+						self.videoLength = int(infolines[2].split(':')[-1])
+						self.videoFrameRate = int(infolines[3].split(':')[-1])
+						self.encode = infolines[4].split(':')[-1]
+						self.type = infolines[5].split(':')[-1]
+						
+						self.updateDescribe()
 
 	def openRtpPort(self):
 		"""Open RTP socket binded to a specified port."""

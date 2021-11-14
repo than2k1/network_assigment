@@ -19,5 +19,5 @@ if __name__ == "__main__":
 	app = Client(root,serverAddr,serverPort,rtpPort,fileName)
 	#app.master.title("RTPClient")
 	app.master.title("RTPClient")
-	# app.setupMovie()
+	app.setupMovie()
 	root.mainloop()
