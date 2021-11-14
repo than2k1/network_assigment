@@ -1,4 +1,4 @@
-
+from time import time
 from tkinter import *
 import tkinter.messagebox as tkMessageBox
 from PIL import Image, ImageTk
@@ -40,7 +40,10 @@ class Client:
 		self.rtpSocket = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
 		self.videoLength = self.videoFrameRatemeRate = 0
 		self.encode = ""
-		self.type =""
+		self.type = ""
+		self.start = 0
+		self.end = 0
+		self.recvdata = 0
 	def createWidgets(self):
 		"""Build GUI."""
 		# Create Setup button
@@ -100,7 +103,9 @@ class Client:
 		self.master.destroy() # Close the gui window
 		os.remove(CACHE_FILE_NAME + str(self.sessionId) + CACHE_FILE_EXT) # Delete the cache image from video
 		rate = float(self.counter/self.frameNbr)
-		print( '-'*60 + "\nRTP Packet Loss Rate :" + str(rate) +"\n" + '-'*60 )
+		self.end = int(time())
+		datarate = self.recvdata/(self.end-self.start)
+		print( '-'*60 + "\nRTP Packet Loss Rate :" + str(rate) +"\nVideo data rate: "+ str(datarate) + "bytes/s" +'-'*60 )
 		sys.exit(0)
 
 	def pauseMovie(self):
@@ -117,7 +122,7 @@ class Client:
 			self.playEvent = threading.Event()
 			self.playEvent.clear()
 			self.sendRtspRequest(self.PLAY)
-
+			self.start = int(time())
 	def listenRtp(self):
 		while True:
 			try:
@@ -142,6 +147,7 @@ class Client:
 
 					if currFrameNbr > self.frameNbr: # Discard the late packet
 						self.frameNbr = currFrameNbr
+						self.recvdata += len(rtpPacket.getPayload())
 						self.updateMovie(self.writeFrame(rtpPacket.getPayload()))
 
 			except:
